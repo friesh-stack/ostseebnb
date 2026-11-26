@@ -72,6 +72,14 @@ h3{font:700 13px "Playfair Display",serif;color:var(--gold);margin:16px 0 6px;le
 .src a{color:var(--gold)}
 #intro{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:radial-gradient(ellipse at center,rgba(8,14,26,.55),rgba(8,14,26,.92));padding:24px;text-align:center}
 #intro.off{display:none}
+.topb{max-width:440px;margin:0 auto 18px;text-align:left;background:rgba(11,20,36,.75);border:1px solid rgba(226,194,122,.35);border-radius:14px;padding:12px 16px 12px}
+.topb h4{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e2c27a;margin:0 0 6px}
+.topb table{width:100%;border-collapse:collapse;font-size:14px}.topb td{padding:4px 0;border-bottom:1px solid rgba(226,194,122,.12);color:#e6e9f0}.topb td:last-child{text-align:right;font-weight:700;white-space:nowrap}
+.topb td small{color:#9fb0c8;margin-left:6px}.topb tr.me td{color:#e2c27a}.topb .cpu{font-size:10px;font-weight:600;color:#9fb0c8;border:1px solid #4a5a75;border-radius:8px;padding:0 5px;margin-left:4px}
+.topb .ch{margin:10px 0 0;font-weight:700;color:#f6e3ae;text-align:center;font-size:15px}
+.board tr.me td{color:var(--gold)}.board small{display:block;color:var(--mute);font-size:12px}.cpu{font-size:10px;font-weight:600;color:#9fb0c8;border:1px solid #4a5a75;border-radius:8px;padding:1px 6px;vertical-align:middle}
+.lb{height:36px;border-radius:20px;background:rgba(19,33,58,.9);color:var(--gold);border:1px solid var(--gold);font-weight:700;font-size:14px;padding:0 14px;cursor:pointer}
+#pName{flex:1;height:36px;border-radius:18px;border:1px solid var(--line);background:#0e1a30;color:var(--ink);font-size:15px;padding:0 12px;min-width:0}
 #intro{overflow-y:auto;place-items:safe center}
 .guide{max-width:440px;margin:0 auto 18px;text-align:left;background:rgba(11,20,36,.75);border:1px solid rgba(226,194,122,.35);border-radius:14px;padding:12px 16px 10px}
 .guide h4{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e2c27a;margin:0 0 6px}
@@ -99,7 +107,8 @@ h3{font:700 13px "Playfair Display",serif;color:var(--gold);margin:16px 0 6px;le
   <p>39 Gemeinden · 7 Ämter und Städte · 7 Datenlinsen · <span id="nTour"></span> Ausflugsziele · jede Zahl mit Quelle</p>
   <div class="free">Kostenlos spielen – direkt im Browser, ohne Anmeldung</div>
   <div class="guide"><h4>Spielanleitung</h4><ol><li><b>Karte bewegen</b> – Mit einem Finger verschieben, mit zwei Fingern zoomen. Am Computer: Mausrad und Pfeiltasten.</li><li><b>Antippen</b> – Tippe auf eine Gemeinde: Einwohner, Fläche, Wachstum, Übernachtungen – jeweils mit Platz – und Sehenswürdigkeiten.</li><li><b>Linsen</b> – Die Leiste oben färbt die Karte neu. Hell = hoch, dunkel = niedrig, grau = kein Wert veröffentlicht.</li><li><b>Ausflugsziele</b> – Goldene Sterne zeigen Gemeinden mit Highlights. Antippen öffnet die Liste.</li><li><b>Inselaufträge</b> – 9 Fragen: Tippe auf das gesuchte Amt oder die gesuchte Gemeinde. Volltreffer 100 Gold, Top 5 noch 50.</li></ol></div>
-  <div class="bt"><button class="pri" id="iGo">Karte erkunden</button><button id="iQuiz">Inselaufträge spielen</button><button id="iHelp">So wird gespielt</button></div>
+  <div class="topb" id="iTop"></div>
+  <div class="bt"><button class="pri" id="iGo">Karte erkunden</button><button id="iQuiz">Inselaufträge spielen</button><button id="iHelp">So wird gespielt</button><button id="iBoard">🏆 Bestenliste</button></div>
 <p class="legal"><a href="index.html">OstseeBnB</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
 </div></div>
 <script>
@@ -386,8 +395,24 @@ function answer(code,hex){const q=QS[quiz.i],f=qFmt(q[2]);
  const vals=Object.entries(BZ).map(([c,b])=>[c,bzVal(b,q[2])]).sort((a,b)=>b[1]-a[1]),right=vals[0][0]===code;if(right)quiz.sc+=100;showBz(code);
  finish((right?'<b>Richtig!</b> ':'<b>Leider nein.</b> Gesucht war ')+`${esc(BZ[vals[0][0]].name)} mit ${f(vals[0][1])}`+(right?'':` – dein Tipp ${esc(BZ[code].name)}: ${f(bzVal(BZ[code],q[2]))}`)+'.',null)}
 $('qNext').onclick=()=>{if(quiz.i<QS.length-1){quiz.i++;setLens('bezirk');panel.classList.remove('open');ask()}else{const n=quiz.sc/100,rk=RANKS[Math.min(4,Math.floor(n/QS.length*5))];let best=0;try{best=Math.max(+localStorage.getItem('hhciv_best')||0,quiz.sc);localStorage.setItem('hhciv_best',best)}catch(e){}
- $('qText').innerHTML=`Alle Aufträge erledigt: <b>${quiz.sc} von ${QS.length*100} Gold</b> – Rang <b>${rk}</b>.${best?' Bestwert '+best+' Gold.':''}`;$('qNext').style.display='none';quiz.done=true;quiz.end=true}};
+ saveRun(quiz.sc);introBoard();$('qText').innerHTML=`Alle Aufträge erledigt: <b>${quiz.sc} von ${QS.length*100} Gold</b> – Rang <b>${rk}</b>.${best?' Bestwert '+best+' Gold.':''} <button class="lb" onclick="showBoard()">🏆 Bestenliste</button>`;$('qNext').style.display='none';quiz.done=true;quiz.end=true;showBoard()}};
 $('qEnd').onclick=()=>{quiz=null;$('quest').classList.remove('on');setLens('terrain')};
+// ---------- Bestenliste (Computer-Gegner + eigene Runden auf diesem Gerät) ----------
+const RIVALS=['Ingrid', 'Malte', 'Chiara', 'Kalle', 'Smilla'].map((n,i)=>[n,[.86,.71,.57,.43,.29][i]]),BKEY='rgciv';
+const pname=()=>{try{return localStorage.getItem('spiel_name')||''}catch(e){return''}};
+function runs(){try{return JSON.parse(localStorage.getItem(BKEY+'_runs')||'[]')}catch(e){return[]}}
+function saveRun(sc){const r=runs();r.push({s:sc});r.sort((a,b)=>b.s-a.s);try{localStorage.setItem(BKEY+'_runs',JSON.stringify(r.slice(0,5)))}catch(e){}}
+function boardList(k){const m=QS.length*100,me=pname()||'Du';return RIVALS.map(([n,f])=>({n,s:Math.round(f*m/50)*50,cpu:1})).concat(runs().map(r=>({n:me,s:r.s,me:1}))).sort((a,b)=>b.s-a.s||(a.cpu?1:-1)).slice(0,k)}
+const rkOf=s=>RANKS[Math.min(4,Math.floor(s/(QS.length*100)*5))];
+function introBoard(){$('iTop').innerHTML='<h4>🏆 Bestenliste</h4><table>'+boardList(5).map((e,i)=>`<tr class="${e.me?'me':''}"><td><b>${i+1}.</b> ${esc(e.n)}${e.cpu?'<span class="cpu">Computer</span>':''}<small>${esc(rkOf(e.s))}</small></td><td>${e.s} Gold</td></tr>`).join('')+'</table><p class="ch">Schaffen Sie das auch – oder überbieten Sie diese Spieler?</p>'}
+window.showBoard=function(){const L=boardList(10);
+ pBody.innerHTML=`<div class="ph"><h2>🏆 Bestenliste</h2></div><p class="sub">Zum Vergleich spielen Computer-Gegner mit. Ihre Ergebnisse bleiben auf diesem Gerät.</p>
+ <table class="kv board">${L.map((e,i)=>`<tr class="${e.me?'me':''}"><td><b>${i+1}.</b> ${esc(e.n)}${e.cpu?' <span class="cpu">Computer</span>':''}<small>${esc(rkOf(e.s))}</small></td><td>${e.s} Gold</td></tr>`).join('')}</table>
+ <p class="row" style="margin-top:14px"><input id="pName" maxlength="20" placeholder="Ihr Name" value="${esc(pname())}"><button id="pSave" class="lb">Speichern</button></p>
+ ${runs().length?'':'<p class="sub">Spielen Sie die Aufträge, um sich einzutragen.</p>'}`;
+ panel.classList.add('open');panel.scrollTop=0;$('pSave').onclick=()=>{try{localStorage.setItem('spiel_name',$('pName').value.trim().slice(0,20))}catch(e){}showBoard();introBoard()}};
+introBoard();$('iBoard').onclick=()=>{$('intro').classList.add('off');showBoard()};
+
 $('bQuiz').onclick=startQuiz;$('iQuiz').onclick=startQuiz;$('iGo').onclick=()=>$('intro').classList.add('off');
 
 // ---------- Gesten ----------
