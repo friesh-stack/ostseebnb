@@ -72,6 +72,7 @@ h3{font:700 13px "Playfair Display",serif;color:var(--gold);margin:16px 0 6px;le
 .src a{color:var(--gold)}
 #intro{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:radial-gradient(ellipse at center,rgba(8,14,26,.55),rgba(8,14,26,.92));padding:24px;text-align:center}
 #intro.off{display:none}
+#intro .freerow{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:nowrap;margin:0 auto 14px;max-width:460px}#intro .freerow .free{margin:0;cursor:pointer;flex:0 1 auto;font-size:14px;padding:8px 12px;line-height:1.25}#intro .freerow button{flex:0 0 auto;height:40px;padding:0 14px;font-size:14px;border-radius:20px;background:rgba(19,33,58,.9);color:var(--gold);border:1px solid var(--gold);font-weight:700;cursor:pointer}#intro .guide,#intro .topb{cursor:pointer}
 #intro .bt.btop{margin:0 auto 18px}
 .topb{max-width:440px;margin:0 auto 18px;text-align:left;background:rgba(11,20,36,.75);border:1px solid rgba(226,194,122,.35);border-radius:14px;padding:12px 16px 12px}
 .topb h4{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e2c27a;margin:0 0 6px}
@@ -106,8 +107,8 @@ h3{font:700 13px "Playfair Display",serif;color:var(--gold);margin:16px 0 6px;le
   <h1>Rügen</h1>
   <em>als Strategiespiel – gebaut aus echten öffentlichen Daten</em>
   <p>39 Gemeinden · 7 Ämter und Städte · 7 Datenlinsen · <span id="nTour"></span> Ausflugsziele · jede Zahl mit Quelle</p>
-  <div class="free">Kostenlos spielen – direkt im Browser, ohne Anmeldung</div>
-  <div class="bt btop"><button class="pri" id="iGo">Karte erkunden</button><button id="iHelp">So wird gespielt</button><button id="iQuiz">Inselaufträge spielen</button><button id="iBoard">🏆 Bestenliste</button></div>
+  <div class="freerow"><div class="free">Kostenlos spielen – direkt im Browser, ohne Anmeldung</div><button id="iHelp">So wird gespielt</button></div>
+  <div class="bt btop"><button class="pri" id="iGo">Karte erkunden</button><button id="iQuiz">Inselaufträge spielen</button><button id="iBoard">🏆 Bestenliste</button></div>
   <div class="guide"><h4>Spielanleitung</h4><ol><li><b>Karte bewegen</b> – Mit einem Finger verschieben, mit zwei Fingern zoomen. Am Computer: Mausrad und Pfeiltasten.</li><li><b>Antippen</b> – Tippe auf eine Gemeinde: Einwohner, Fläche, Wachstum, Übernachtungen – jeweils mit Platz – und Sehenswürdigkeiten.</li><li><b>Linsen</b> – Die Leiste oben färbt die Karte neu. Hell = hoch, dunkel = niedrig, grau = kein Wert veröffentlicht.</li><li><b>Ausflugsziele</b> – Goldene Sterne zeigen Gemeinden mit Highlights. Antippen öffnet die Liste.</li><li><b>Inselaufträge</b> – 9 Fragen: Tippe auf das gesuchte Amt oder die gesuchte Gemeinde. Volltreffer 100 Gold, Top 5 noch 50.</li></ol></div>
   <div class="topb" id="iTop"></div>
 <p class="legal"><a href="index.html">OstseeBnB</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
@@ -347,7 +348,7 @@ function setLens(l){lens=l;document.querySelectorAll('#lenses button').forEach(b
 $('lenses').innerHTML=Object.entries(LENS).map(([k,v])=>`<button data-l="${k}">${v.label}</button>`).join('');
 $('lenses').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLens(b.dataset.l)});
 const person=on=>`<svg viewBox="0 0 12 20" class="${on?'on':''}"><circle cx="6" cy="4" r="3.2"/><path d="M1 19v-6a5 5 0 0 1 10 0v6z"/></svg>`;
-function cmp(lab,v,ref,f,col){const m=Math.max(v,ref)*1.1;return`<div class="cmp"><div class="l"><b>${lab}</b><span>${f(v)} · Rügen ${f(ref)}</span></div><div class="t"><i style="width:${w(v)}%;background:${col}"></i></div><div class="t"><i style="width:${w(ref)}%;background:#6b7891"></i></div></div>`}
+function cmp(lab,v,ref,f,col){const m=Math.max(v,ref,0)*1.1||1,w=x=>Math.max(0,x)/m*100;return`<div class="cmp"><div class="l"><b>${lab}</b><span>${f(v)} · Rügen ${f(ref)}</span></div><div class="t"><i style="width:${w(v)}%;background:${col}"></i></div><div class="t"><i style="width:${w(ref)}%;background:#6b7891"></i></div></div>`}
 const ROWS=[['Fläche','area',null],['Dichte','dens',null],['Wachstum 2024','chg',null],['Übernachtungen 2024','ueb',null],['Gästeankünfte 2024','ank',fmtN],['Übernachtungen je Einwohner','uep',null],['Aufenthaltsdauer','auf',null]];
 function stBlock(st,hex,b){const T=TOUR[st.n]||[],d=st.d,U=uniqSt();
  const rk=k=>{const l=U.filter(t=>t.d[k]!=null).sort((x,y)=>y.d[k]-x.d[k]);return[l.findIndex(t=>t.d===d)+1,l.length]};
@@ -414,7 +415,7 @@ window.showBoard=function(){const L=boardList(10);
  panel.classList.add('open');panel.scrollTop=0;$('pSave').onclick=()=>{try{localStorage.setItem('spiel_name',$('pName').value.trim().slice(0,20))}catch(e){}showBoard();introBoard()}};
 introBoard();$('iBoard').onclick=()=>{$('intro').classList.add('off');showBoard()};
 
-$('bQuiz').onclick=startQuiz;$('iQuiz').onclick=startQuiz;$('iGo').onclick=()=>$('intro').classList.add('off');
+$('bQuiz').onclick=startQuiz;document.querySelector('#intro .free').onclick=()=>$('iGo').click();document.querySelector('#intro .guide').onclick=()=>$('iHelp').click();document.querySelector('#intro .topb').onclick=e=>{if(!e.target.closest('button'))$('iBoard').click()};$('iQuiz').onclick=startQuiz;$('iGo').onclick=()=>$('intro').classList.add('off');
 
 // ---------- Gesten ----------
 const pts=new Map();let moved=0;
@@ -425,7 +426,7 @@ cv.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const p=pt
  else if(pts.size===2){const o=[...pts.entries()].find(([k])=>k!==e.pointerId)[1];const d0=Math.hypot(p[0]-o[0],p[1]-o[1]),d1=Math.hypot(e.clientX-o[0],e.clientY-o[1]);
   const m0=[(p[0]+o[0])/2,(p[1]+o[1])/2],m1=[(e.clientX+o[0])/2,(e.clientY+o[1])/2];view.cx-=(m1[0]-m0[0])/view.s;view.cy-=(m1[1]-m0[1])/view.s;if(d0>0)zoomAt(m1[0],m1[1],d1/d0);moved+=99}
  pts.set(e.pointerId,[e.clientX,e.clientY])});
-const up=e=>{if(pts.size===1&&moved<8)tap(e.clientX,e.clientY);pts.delete(e.pointerId)};
+const up=e=>{if(pts.size===1&&moved<14)tap(e.clientX,e.clientY);pts.delete(e.pointerId)};
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',e=>pts.delete(e.pointerId));
 cv.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.0015))},{passive:false});
 function tap(x,y){if((!quiz||quiz.done)&&lens==='tour'){for(const t of ST){if(!TOUR[t.n])continue;const[a,b]=toS(t.x,t.y);if(Math.hypot(a-x,b-y)<18){const hex=hexAt(t.x,t.y);sel={hex};showBz(t.b,hex&&hex.st===t?hex:{st:t,k:t.k});draw();return}}}
