@@ -434,6 +434,7 @@ function tap(x,y){if((!quiz||quiz.done)&&lens==='tour'){for(const t of ST){if(!T
  for(const c in BZ){const h=BZ[c].hit;if(h&&x>=h[0]&&x<=h[0]+h[2]&&y>=h[1]&&y<=h[1]+h[3]){sel=null;quiz&&!quiz.done?answer(c):showBz(c);draw();return}}
  const[kx,ky]=toK(x,y),hex=hexAt(kx,ky);if(!hex||!hex.inside){panel.classList.remove('open');sel=null;draw();return}
  sel={hex};if(quiz&&!quiz.done)answer(hex.bz,hex);else showBz(hex.bz,hex);draw()}
+
 // ---------- Entdecken: Orte aus OpenStreetMap + aktuelles Wetter (Open-Meteo). Lädt erst, wenn der Besucher eine Kategorie antippt. ----------
 (()=>{
 const XL={
@@ -465,16 +466,16 @@ el:{t:'Ανακαλύψτε',zoom:'Μεγεθύνετε περισσότερο �
  c:{sight:'Αξιοθέατα',museum:'Μουσεία',rail:'Τρένο & μετρό',bus:'Στάσεις λεωφορείου',shop:'Αγορές',fun:'Ψυχαγωγία',stadium:'Γήπεδα',garden:'Κήποι & πάρκα',view:'Θέα',theatre:'Θέατρα',weather:'Καιρός'}}};
 const L=()=>XL[(typeof LG!=='undefined'&&XL[LG])?LG:'de'];
 // Kategorie: Symbol, Farbe, Overpass-Abfrage, maximale Ausschnittbreite in km
-const CAT={sight:['🏛','#f2c14e','nwr["tourism"="attraction"]["name"](B);nwr["historic"~"^(castle|monument|ruins|city_gate|fort)$"]["name"](B);',120],
- museum:['🖼','#c78bf0','nwr["tourism"~"^(museum|gallery)$"]["name"](B);',80],
- rail:['🚆','#5fb3ff','nwr["railway"~"^(station|halt)$"]["name"](B);',50],
- bus:['🚌','#8fd16a','node["highway"="bus_stop"](B);',5],
- shop:['🛍','#ff8a5c','nwr["shop"~"^(mall|department_store)$"]["name"](B);way["highway"="pedestrian"]["name"](B);nwr["shop"="supermarket"](B);',12],
- fun:['🎡','#ff6fae','nwr["tourism"~"^(theme_park|zoo|aquarium)$"](B);nwr["leisure"="water_park"](B);',150],
- stadium:['🏟','#4fd1c5','nwr["leisure"="stadium"]["name"](B);',150],
- garden:['🌳','#5cc06a','nwr["leisure"="garden"]["garden:type"="botanical"](B);nwr["leisure"="park"]["name"](B);',25],
- view:['🔭','#9ad0ff','nwr["tourism"="viewpoint"](B);nwr["man_made"="tower"]["tower:type"="observation"](B);',60],
- theatre:['🎭','#e8a0ff','nwr["amenity"~"^(theatre|arts_centre)$"]["name"](B);',60]};
+const CAT={sight:['🏛','#f2c14e','nwr["tourism"="attraction"]["name"](B);nwr["historic"~"^(castle|monument|ruins|city_gate|fort)$"]["name"](B);',40],
+ museum:['🖼','#c78bf0','nwr["tourism"~"^(museum|gallery)$"]["name"](B);',40],
+ rail:['🚆','#5fb3ff','nwr["railway"~"^(station|halt)$"]["name"](B);',25],
+ bus:['🚌','#8fd16a','node["highway"="bus_stop"](B);',4],
+ shop:['🛍','#ff8a5c','nwr["shop"~"^(mall|department_store)$"]["name"](B);way["highway"="pedestrian"]["name"](B);nwr["shop"="supermarket"](B);',8],
+ fun:['🎡','#ff6fae','nwr["tourism"~"^(theme_park|zoo|aquarium)$"](B);nwr["leisure"="water_park"](B);',60],
+ stadium:['🏟','#4fd1c5','nwr["leisure"="stadium"]["name"](B);',60],
+ garden:['🌳','#5cc06a','nwr["leisure"="garden"]["garden:type"="botanical"](B);nwr["leisure"="park"]["name"](B);',15],
+ view:['🔭','#9ad0ff','nwr["tourism"="viewpoint"](B);nwr["man_made"="tower"]["tower:type"="observation"](B);',30],
+ theatre:['🎭','#e8a0ff','nwr["amenity"~"^(theatre|arts_centre)$"]["name"](B);',25]};
 const ON=new Set(),ITEMS={},DONE={},inv=(()=>{const o=P(0,0),kx=P(1,0)[0]-o[0],ky=P(0,1)[1]-o[1];return(x,y)=>[(x-o[0])/kx,(y-o[1])/ky]})();
 const kmW=()=>W/view.s;let msgT=0,busy=0;
 const bar=document.createElement('div');bar.className='lenses poi';bar.id='poiBar';$('lenses').after(bar);
@@ -486,22 +487,34 @@ const st=document.createElement('style');st.textContent=`.poi button{font-size:1
 function say(t,ms){msg.textContent=t;msg.style.display=t?'block':'none';clearTimeout(msgT);if(t&&ms)msgT=setTimeout(()=>msg.style.display='none',ms)}
 function render(){const l=L();bar.innerHTML=`<span class="lab">🧭 ${esc(l.t)}</span>`+Object.keys(CAT).concat(['weather']).map(k=>`<button data-k="${k}" aria-pressed="${ON.has(k)}">${k==='weather'?'🌡':CAT[k][0]} ${esc(l.c[k])}</button>`).join('');credit.textContent=l.src;credit.style.display=ON.size?'block':'none'}
 bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;ON.has(k)?ON.delete(k):ON.add(k);render();if(k==='weather'&&ON.has(k))loadWx();refresh(true);draw()});
-// ----- Orte laden (Overpass) -----
-const EP=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
-async function fetchOP(q){for(const u of EP){try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}});if(r.ok)return await r.json()}catch(e){}}throw new Error('op')}
+// ----- Orte: zuerst die wöchentlich vorab geholte Datei orte.json (eigener Server), dann Details live (Overpass) beim Heranzoomen -----
+let PRE=null,STADT=false;
+async function loadPre(){if(PRE)return PRE;PRE='…';for(const u of ['orte.json','https://ostseebnb.de/orte.json'].slice(0,location.pathname.includes('ruegen-spiel')?2:1)){try{const r=await fetch(u,{cache:'no-cache'});if(!r.ok)continue;const j=await r.json();STADT=!!j.stadt;
+  for(const k in j.c){const M=ITEMS[k]=ITEMS[k]||new Map();for(const row of j.c[k]){const[lat,lon,name,id,ex]=row,[x,y]=P(lon,lat);M.set(id,{k,x,y,lat,lon,t:Object.assign({name},ex||{}),id:id.slice(1),type:{n:'node',w:'way',r:'relation'}[id[0]]})}}
+  PRE=j;draw();return j}catch(e){}}PRE='none';return null}
+const EP=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+async function fetchOP(q){for(const u of EP){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),15000);try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});clearTimeout(to);if(r.ok)return await r.json()}catch(e){clearTimeout(to)}}throw new Error('op')}
+function cls(t,todo){const has=k=>todo.includes(k);
+ if(has('bus')&&t.highway==='bus_stop')return'bus';if(has('rail')&&/^(station|halt)$/.test(t.railway||''))return'rail';if(has('museum')&&/^(museum|gallery)$/.test(t.tourism||''))return'museum';
+ if(has('shop')&&(/^(mall|department_store|supermarket)$/.test(t.shop||'')||t.highway==='pedestrian'))return'shop';if(has('fun')&&(/^(theme_park|zoo|aquarium)$/.test(t.tourism||'')||t.leisure==='water_park'))return'fun';
+ if(has('stadium')&&t.leisure==='stadium')return'stadium';if(has('garden')&&/^(garden|park)$/.test(t.leisure||''))return'garden';if(has('view')&&(t.tourism==='viewpoint'||t.man_made==='tower'))return'view';
+ if(has('theatre')&&/^(theatre|arts_centre)$/.test(t.amenity||''))return'theatre';if(has('sight')&&(t.tourism==='attraction'||t.historic))return'sight';return null}
 let rT=0,lastFar='';function refresh(now){clearTimeout(rT);rT=setTimeout(load,now?50:900)}
 async function load(){const cats=[...ON].filter(k=>k!=='weather');if(!cats.length){say('');return}
+ if(!PRE){say(L().load);await loadPre();say('')}
+ if(STADT)return; // Stadt-Spiele: alles ist vorab geladen
  const w=kmW(),[a,b]=inv(...toK(0,0)),[c,d]=inv(...toK(W,H)),S=Math.min(b,d),N=Math.max(b,d),Wl=Math.min(a,c),E=Math.max(a,c);
- const tooFar=cats.filter(k=>w>CAT[k][3]),todo=cats.filter(k=>w<=CAT[k][3]&&!(DONE[k]||[]).some(r=>r[0]<=S&&r[1]<=Wl&&r[2]>=N&&r[3]>=E));
- const fk=tooFar.join();if(tooFar.length&&!todo.length&&fk!==lastFar)say(L().zoom+': '+tooFar.map(k=>L().c[k]).join(', '),3500);lastFar=fk;
- if(!todo.length)return;
- const pad=.25,dy=(N-S)*pad,dx=(E-Wl)*pad,bb=[S-dy,Wl-dx,N+dy,E+dx],B=bb.map(v=>v.toFixed(4)).join(',');
- busy++;say(L().load);
- try{for(const k of todo){const j=await fetchOP(`[out:json][timeout:25];(${CAT[k][2].replaceAll('(B)','('+B+')')});out tags center 600;`);
-   (DONE[k]=DONE[k]||[]).push(bb);const M=ITEMS[k]=ITEMS[k]||new Map();
-   for(const e of j.elements||[]){const lat=e.lat??e.center?.lat,lon=e.lon??e.center?.lon;if(lat==null)continue;const[x,y]=P(lon,lat);M.set(e.type+e.id,{k,x,y,lat,lon,t:e.tags||{},id:e.id,type:e.type})}}
-  busy--;const n=todo.reduce((s,k)=>s+(ITEMS[k]?ITEMS[k].size:0),0);say(n?'':L().none,2500);draw()}
- catch(e){busy--;say(L().err,4000)}}
+ const todo=cats.filter(k=>w<=CAT[k][3]&&!(DONE[k]||[]).some(r=>r[0]<=S&&r[1]<=Wl&&r[2]>=N&&r[3]>=E));
+ const empty=cats.filter(k=>!(ITEMS[k]&&ITEMS[k].size)&&w>CAT[k][3]),fk=empty.join();
+ if(empty.length&&!todo.length&&fk!==lastFar)say(L().zoom+': '+empty.map(k=>L().c[k]).join(', '),3500);lastFar=fk;
+ if(!todo.length||busy)return;
+ const pad=.2,dy=(N-S)*pad,dx=(E-Wl)*pad,bb=[S-dy,Wl-dx,N+dy,E+dx],B=bb.map(v=>v.toFixed(4)).join(',');
+ busy=1;say(L().load);
+ try{const q='[out:json][timeout:15];('+todo.map(k=>CAT[k][2]).join('').replaceAll('(B)','('+B+')')+');out tags center 800;';const j=await fetchOP(q);
+  todo.forEach(k=>{(DONE[k]=DONE[k]||[]).push(bb);ITEMS[k]=ITEMS[k]||new Map()});
+  for(const e of j.elements||[]){const lat=e.lat??e.center?.lat,lon=e.lon??e.center?.lon;if(lat==null)continue;const k=cls(e.tags||{},todo);if(!k)continue;const[x,y]=P(lon,lat);ITEMS[k].set(e.type[0]+e.id,{k,x,y,lat,lon,t:e.tags||{},id:e.id,type:e.type})}
+  busy=0;say('');draw()}
+ catch(e){busy=0;say(L().err,4000)}}
 // ----- Wetter (Open-Meteo) -----
 let WX=null,wxT=0;const WXI=c=>c===0?'☀️':c<=2?'🌤':c===3?'☁️':c<=48?'🌫':c<=67?'🌧':c<=77?'🌨':c<=82?'🌦':c<=86?'🌨':'⛈';
 async function loadWx(){if(WX&&Date.now()-wxT<9e5)return;try{const pts=ST.map(t=>inv(t.x,t.y)),out=[];
